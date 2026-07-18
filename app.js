@@ -470,9 +470,12 @@ function renderTopicsList() {
         rootItemDiv.className = `topic-item root-topic ${state.activeTopicId === rootTopic.id ? 'active' : ''}`;
         rootItemDiv.dataset.id = rootTopic.id;
 
+        // Determine if this topic group should be expanded (if active topic is either the root topic or one of its subtopics)
+        const isActiveInGroup = state.activeTopicId === rootTopic.id || subtopics.some(sub => sub.id === state.activeTopicId);
+        
         const hasSubtopics = subtopics.length > 0;
         const caretHtml = hasSubtopics ? 
-            `<i data-lucide="chevron-down" class="toggle-subtopics"></i>` : 
+            `<i data-lucide="chevron-down" class="toggle-subtopics ${isActiveInGroup ? '' : 'collapsed'}"></i>` : 
             `<span style="width:14px; display:inline-block; flex-shrink:0;"></span>`;
 
         rootItemDiv.innerHTML = `
@@ -511,7 +514,7 @@ function renderTopicsList() {
 
         if (hasSubtopics) {
             const subListUl = document.createElement('ul');
-            subListUl.className = 'subtopics-list';
+            subListUl.className = `subtopics-list ${isActiveInGroup ? '' : 'hidden'}`;
 
             subtopics.forEach(sub => {
                 const subLi = document.createElement('li');
