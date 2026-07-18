@@ -1524,7 +1524,9 @@ function openImageViewer(src, title, desc) {
 // ==========================================================================
 
 // Export Data (JSON)
-dom.exportBtn.addEventListener('click', async () => {
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('#export-btn, .export-btn-action');
+    if (!btn) return;
     try {
         const data = await dbManager.getAllData();
         const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
@@ -1543,7 +1545,9 @@ dom.exportBtn.addEventListener('click', async () => {
 });
 
 // Import Data (JSON) trigger
-dom.importBtn.addEventListener('click', () => {
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#import-btn, .import-btn-action');
+    if (!btn) return;
     dom.importFileInput.click();
 });
 
