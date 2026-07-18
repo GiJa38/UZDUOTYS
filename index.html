@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pastabos – Greitas Studijų Srautas</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Marked.js for Markdown (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Tesseract.js for OCR (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- PDF.js for PDF text extraction (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i data-lucide="zap" class="logo-icon"></i>
+                    <span>AI Užrašai</span>
+                </div>
+            </div>
+
+            <div class="search-wrapper">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="search-input" placeholder="Ieškoti sraute...">
+                <button id="clear-search-btn" class="clear-search-btn hidden">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="sidebar-section-title">
+                <span>Temos / Paskaitos</span>
+                <button id="new-topic-btn" class="icon-btn-add" title="Nauja tema">
+                    <i data-lucide="plus"></i>
+                </button>
+            </div>
+
+            <nav class="topics-nav">
+                <ul id="topics-list">
+                    <!-- Topics will be dynamically loaded here -->
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="export-btn" class="footer-btn" title="Eksportuoti visus duomenis">
+                    <i data-lucide="download"></i>
+                    <span>Eksportuoti</span>
+                </button>
+                <button id="import-btn" class="footer-btn" title="Importuoti iš atsarginės kopijos">
+                    <i data-lucide="upload"></i>
+                    <span>Importuoti</span>
+                </button>
+                <input type="file" id="import-file-input" accept=".json" class="hidden">
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content" id="main-content">
+            <!-- Default screen when no topic is selected -->
+            <div id="welcome-view" class="welcome-container">
+                <div class="welcome-card">
+                    <div class="welcome-icon-glow">
+                        <i data-lucide="zap"></i>
+                    </div>
+                    <h1>Greito konspektavimo srautas mokymuisi</h1>
+                    <p>Sukurkite temą ar pasirinkite paskaitą šoninėje juostoje, kad pradėtumėte kaupti informaciją. Įrašykite pastabas, dėkite nuorodas ar **įklijuokite ekrano nuotraukas (Ctrl+V)** chronologine tvarka.</p>
+                    <div class="welcome-actions">
+                        <button id="welcome-new-topic-btn" class="btn btn-primary">
+                            <i data-lucide="plus"></i> Pradėti naują temą
+                        </button>
+                        <button id="quick-demo-btn" class="btn btn-secondary">
+                            <i data-lucide="sparkles"></i> Užkrauti pavyzdžius
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Topic View -->
+            <div id="topic-view" class="topic-view-container hidden">
+                <header class="topic-header">
+                    <div class="topic-header-main">
+                        <div class="topic-title-wrapper">
+                            <span id="topic-icon-display" class="topic-emoji">💡</span>
+                            <div>
+                                <h1 id="topic-title-display">Temos Pavadinimas</h1>
+                                <p id="topic-desc-display" class="topic-description">Temos aprašymas...</p>
+                            </div>
+                        </div>
+                        <div class="topic-actions">
+                            <button id="edit-topic-btn" class="btn-icon" title="Redaguoti temą">
+                                <i data-lucide="edit-3"></i>
+                            </button>
+                            <button id="delete-topic-btn" class="btn-icon btn-danger" title="Ištrinti temą">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Subtopic Flow View (Capture Box & Stream) -->
+                <div id="subtopic-content-wrapper" class="hidden">
+                    <!-- Quick Capture Box (The central dump area) -->
+                    <section class="quick-capture-section">
+                        <div class="quick-capture-box" id="quick-capture-box">
+                            <!-- Text Formatting Toolbar & Emoji Picker -->
+                            <div class="capture-toolbar" id="capture-toolbar">
+                                <button type="button" class="toolbar-btn" data-format="bold" title="Paryškintas (Bold)">
+                                    <i data-lucide="bold"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-format="italic" title="Kursyvas (Italic)">
+                                    <i data-lucide="italic"></i>
+                                </button>
+                                <div class="toolbar-separator"></div>
+                                <button type="button" class="toolbar-btn" data-format="bullet" title="Sąrašas punktais">
+                                    <i data-lucide="list"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-format="number" title="Numeruotas sąrašas">
+                                    <i data-lucide="list-ordered"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" data-format="code" title="Kodo blokas">
+                                    <i data-lucide="code-2"></i>
+                                </button>
+                                 <div class="toolbar-separator"></div>
+                                 <div class="emoji-picker-wrapper">
+                                     <button type="button" class="toolbar-btn" id="emoji-picker-btn" title="Pridėti Emoji">
+                                         <i data-lucide="smile"></i>
+                                     </button>
+                                     <div class="emoji-dropdown hidden" id="emoji-dropdown">
+                                         <!-- Emojis populated by JS -->
+                                     </div>
+                                 </div>
+                                 <div class="toolbar-separator"></div>
+                                 <div style="position: relative; display: inline-block;">
+                                     <button type="button" class="toolbar-btn" id="color-picker-btn" title="Teksto spalva">
+                                         <i data-lucide="palette"></i>
+                                     </button>
+                                     <div class="toolbar-dropdown hidden" id="color-dropdown" style="left: 0;">
+                                         <span class="color-swatch" style="background-color: #ef4444;" data-color="#ef4444" title="Raudona"></span>
+                                         <span class="color-swatch" style="background-color: #f97316;" data-color="#f97316" title="Oranžinė"></span>
+                                         <span class="color-swatch" style="background-color: #eab308;" data-color="#eab308" title="Geltona"></span>
+                                         <span class="color-swatch" style="background-color: #22c55e;" data-color="#22c55e" title="Žalia"></span>
+                                         <span class="color-swatch" style="background-color: #06b6d4;" data-color="#06b6d4" title="Žydra"></span>
+                                         <span class="color-swatch" style="background-color: #3b82f6;" data-color="#3b82f6" title="Mėlyna"></span>
+                                         <span class="color-swatch" style="background-color: #a855f7;" data-color="#a855f7" title="Violetinė"></span>
+                                         <span class="color-swatch" style="background-color: #ec4899;" data-color="#ec4899" title="Rožinė"></span>
+                                     </div>
+                                 </div>
+                                 <div style="position: relative; display: inline-block;">
+                                     <button type="button" class="toolbar-btn" id="highlight-picker-btn" title="Teksto žymeklis">
+                                         <i data-lucide="highlighter"></i>
+                                     </button>
+                                     <div class="toolbar-dropdown hidden" id="highlight-dropdown" style="left: 0;">
+                                         <span class="highlight-swatch" style="background-color: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444;" data-bg="rgba(239, 68, 68, 0.2)" data-color="#ef4444" title="Raudona"></span>
+                                         <span class="highlight-swatch" style="background-color: rgba(249, 115, 22, 0.25); border: 1px solid #f97316;" data-bg="rgba(249, 115, 22, 0.2)" data-color="#f97316" title="Oranžinė"></span>
+                                         <span class="highlight-swatch" style="background-color: rgba(234, 179, 8, 0.25); border: 1px solid #eab308;" data-bg="rgba(234, 179, 8, 0.2)" data-color="#eab308" title="Geltona"></span>
+                                         <span class="highlight-swatch" style="background-color: rgba(34, 197, 94, 0.25); border: 1px solid #22c55e;" data-bg="rgba(34, 197, 94, 0.2)" data-color="#22c55e" title="Žalia"></span>
+                                         <span class="highlight-swatch" style="background-color: rgba(6, 182, 212, 0.25); border: 1px solid #06b6d4;" data-bg="rgba(6, 182, 212, 0.2)" data-color="#06b6d4" title="Žydra"></span>
+                                         <span class="highlight-swatch" style="background-color: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6;" data-bg="rgba(59, 130, 246, 0.2)" data-color="#3b82f6" title="Mėlyna"></span>
+                                         <span class="highlight-swatch" style="background-color: rgba(168, 85, 247, 0.25); border: 1px solid #a855f7;" data-bg="rgba(168, 85, 247, 0.2)" data-color="#a855f7" title="Violetinė"></span>
+                                         <span class="highlight-swatch" style="background-color: rgba(236, 72, 153, 0.25); border: 1px solid #ec4899;" data-bg="rgba(236, 72, 153, 0.2)" data-color="#ec4899" title="Rožinė"></span>
+                                     </div>
+                                 </div>
+                                 <div style="position: relative; display: inline-block;">
+                                     <button type="button" class="toolbar-btn" id="size-picker-btn" title="Teksto dydis">
+                                         <i data-lucide="type"></i>
+                                     </button>
+                                     <div class="toolbar-dropdown hidden" id="size-dropdown" style="left: 0;">
+                                         <div class="size-option" data-size="0.8rem" style="font-size: 0.85rem;">Mažas</div>
+                                         <div class="size-option" data-size="1rem" style="font-size: 1rem;">Normalus</div>
+                                         <div class="size-option" data-size="1.25rem" style="font-size: 1.15rem; font-weight: bold;">Didelis</div>
+                                         <div class="size-option" data-size="1.5rem" style="font-size: 1.3rem; font-weight: bold;">Labai didelis</div>
+                                     </div>
+                                 </div>
+                             </div>
+
+                            <div class="capture-input-wrapper">
+                                <textarea id="capture-input" placeholder="Įklijuokite nukopijuotą kodo pavyzdį, nuorodą, pastabą... Arba tiesiog paspauskite Ctrl+V ekrano nuotraukai pridėti." rows="3"></textarea>
+                            </div>
+
+                            <!-- Universal Attachments Preview Container -->
+                            <div id="capture-attachments-preview" class="capture-attachments-preview hidden">
+                                <!-- Dynamic attachment preview cards go here -->
+                            </div>
+
+                            <!-- Optional fields & action buttons -->
+                            <div class="capture-actions">
+                                <div class="capture-meta-inputs">
+                                    <input type="text" id="capture-title" placeholder="Antraštė (nebūtina)">
+                                    <input type="text" id="capture-tags" placeholder="Žymos (atskirti kableliais)">
+                                </div>
+                                <div class="capture-buttons">
+                                    <button type="button" id="upload-image-trigger" class="btn btn-secondary btn-icon-only" title="Pridėti failus (nuotraukas, PDF, ZIP...)">
+                                        <i data-lucide="paperclip"></i>
+                                    </button>
+                                    <input type="file" id="capture-file-input" accept="*/*" multiple class="hidden">
+                                    <button type="button" id="save-capture-btn" class="btn btn-primary">
+                                        <i data-lucide="send"></i> Išsaugoti pastabą
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Stream Flow Chronological List -->
+                    <section class="stream-section">
+                        <div class="stream-header-info">
+                            <span id="stream-count-badge" class="stream-badge">0 įrašų</span>
+                        </div>
+                        <div id="stream-container" class="stream-flow-container">
+                            <!-- Stream cards will be loaded here -->
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Dashboard view for Root Topic (List of subtopics) -->
+                <div id="root-dashboard-wrapper" class="hidden">
+                    <div class="dashboard-subtopics-header">
+                        <h2>Potemės / Paskaitos</h2>
+                        <button id="dashboard-new-subtopic-btn" class="btn btn-primary">
+                            <i data-lucide="plus"></i> Pridėti potemę
+                        </button>
+                    </div>
+                    <div id="dashboard-subtopics-grid" class="subtopics-grid">
+                        <!-- Subtopic cards dynamically loaded -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Topic Modal (Create/Edit) -->
+    <div id="topic-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="topic-modal-title">Sukurti naują temą</h3>
+                <button class="close-modal-btn"><i data-lucide="x"></i></button>
+            </div>
+            <form id="topic-form" class="modal-form">
+                <input type="hidden" id="topic-modal-id">
+                <input type="hidden" id="topic-modal-parent-id">
+                
+                <div class="form-group-row">
+                    <div class="form-group flex-1" style="position: relative;">
+                        <label for="topic-title">Pavadinimas</label>
+                        <div class="capture-toolbar" id="topic-title-toolbar" style="margin-bottom: 0.25rem;">
+                            <button type="button" class="toolbar-btn" data-format="bold" title="Paryškintas (Bold)">
+                                <i data-lucide="bold"></i>
+                            </button>
+                            <button type="button" class="toolbar-btn" data-format="italic" title="Kursyvas (Italic)">
+                                <i data-lucide="italic"></i>
+                            </button>
+                            <div class="toolbar-separator"></div>
+                            <div class="emoji-picker-wrapper">
+                                <button type="button" class="toolbar-btn" id="topic-title-emoji-picker-btn" title="Įterpti emoji">
+                                    <i data-lucide="smile"></i>
+                                </button>
+                                <div id="topic-title-emoji-dropdown" class="emoji-dropdown hidden" style="position: absolute; left: 0; z-index: 50 !important;"></div>
+                            </div>
+                            <div class="toolbar-separator"></div>
+                            <div style="position: relative; display: inline-block;">
+                                <button type="button" class="toolbar-btn" id="topic-title-color-picker-btn" title="Teksto spalva">
+                                    <i data-lucide="palette"></i>
+                                </button>
+                                <div class="toolbar-dropdown hidden" id="topic-title-color-dropdown" style="left: 0; z-index: 50 !important;">
+                                    <span class="color-swatch" style="background-color: #ef4444;" data-color="#ef4444" title="Raudona"></span>
+                                    <span class="color-swatch" style="background-color: #f97316;" data-color="#f97316" title="Oranžinė"></span>
+                                    <span class="color-swatch" style="background-color: #eab308;" data-color="#eab308" title="Geltona"></span>
+                                    <span class="color-swatch" style="background-color: #22c55e;" data-color="#22c55e" title="Žalia"></span>
+                                    <span class="color-swatch" style="background-color: #06b6d4;" data-color="#06b6d4" title="Žydra"></span>
+                                    <span class="color-swatch" style="background-color: #3b82f6;" data-color="#3b82f6" title="Mėlyna"></span>
+                                    <span class="color-swatch" style="background-color: #a855f7;" data-color="#a855f7" title="Violetinė"></span>
+                                    <span class="color-swatch" style="background-color: #ec4899;" data-color="#ec4899" title="Rožinė"></span>
+                                </div>
+                            </div>
+                            <div style="position: relative; display: inline-block;">
+                                <button type="button" class="toolbar-btn" id="topic-title-highlight-picker-btn" title="Teksto žymeklis">
+                                    <i data-lucide="highlighter"></i>
+                                </button>
+                                <div class="toolbar-dropdown hidden" id="topic-title-highlight-dropdown" style="left: 0; z-index: 50 !important;">
+                                    <span class="highlight-swatch" style="background-color: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444;" data-bg="rgba(239, 68, 68, 0.2)" data-color="#ef4444" title="Raudona"></span>
+                                    <span class="highlight-swatch" style="background-color: rgba(249, 115, 22, 0.25); border: 1px solid #f97316;" data-bg="rgba(249, 115, 22, 0.2)" data-color="#f97316" title="Oranžinė"></span>
+                                    <span class="highlight-swatch" style="background-color: rgba(234, 179, 8, 0.25); border: 1px solid #eab308;" data-bg="rgba(234, 179, 8, 0.2)" data-color="#eab308" title="Geltona"></span>
+                                    <span class="highlight-swatch" style="background-color: rgba(34, 197, 94, 0.25); border: 1px solid #22c55e;" data-bg="rgba(34, 197, 94, 0.2)" data-color="#22c55e" title="Žalia"></span>
+                                    <span class="highlight-swatch" style="background-color: rgba(6, 182, 212, 0.25); border: 1px solid #06b6d4;" data-bg="rgba(6, 182, 212, 0.2)" data-color="#06b6d4" title="Žydra"></span>
+                                    <span class="highlight-swatch" style="background-color: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6;" data-bg="rgba(59, 130, 246, 0.2)" data-color="#3b82f6" title="Mėlyna"></span>
+                                    <span class="highlight-swatch" style="background-color: rgba(168, 85, 247, 0.25); border: 1px solid #a855f7;" data-bg="rgba(168, 85, 247, 0.2)" data-color="#a855f7" title="Violetinė"></span>
+                                    <span class="highlight-swatch" style="background-color: rgba(236, 72, 153, 0.25); border: 1px solid #ec4899;" data-bg="rgba(236, 72, 153, 0.2)" data-color="#ec4899" title="Rožinė"></span>
+                                </div>
+                            </div>
+                            <div style="position: relative; display: inline-block;">
+                                <button type="button" class="toolbar-btn" id="topic-title-size-picker-btn" title="Teksto dydis">
+                                    <i data-lucide="type"></i>
+                                </button>
+                                <div class="toolbar-dropdown hidden" id="topic-title-size-dropdown" style="left: 0; z-index: 50 !important;">
+                                    <div class="size-option" data-size="0.8rem" style="font-size: 0.85rem;">Mažas</div>
+                                    <div class="size-option" data-size="1rem" style="font-size: 1rem;">Normalus</div>
+                                    <div class="size-option" data-size="1.25rem" style="font-size: 1.15rem; font-weight: bold;">Didelis</div>
+                                    <div class="size-option" data-size="1.5rem" style="font-size: 1.3rem; font-weight: bold;">Labai didelis</div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="text" id="topic-title" placeholder="Pvz., 1 Paskaita: Promptai" required>
+                    </div>
+                    <div class="form-group flex-0" style="position: relative;">
+                        <label for="topic-emoji">Ikona</label>
+                        <div class="emoji-picker-container" style="display: flex; gap: 0.25rem;">
+                            <input type="text" id="topic-emoji" placeholder="💡" value="💡" maxlength="2" class="emoji-input" style="width: 45px; text-align: center; font-size: 1.15rem; cursor: pointer;" readonly>
+                            <button type="button" id="topic-emoji-picker-btn" class="btn btn-secondary btn-icon-only" style="padding: 0 0.5rem; height: 38px;" title="Pasirinkti ikoną">
+                                <i data-lucide="smile"></i>
+                            </button>
+                        </div>
+                        <div id="topic-emoji-dropdown" class="emoji-dropdown hidden" style="position: absolute; right: 0; top: 100%; margin-top: 0.35rem; z-index: 20;"></div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="position: relative;">
+                    <label for="topic-desc">Aprašymas</label>
+                    <div class="capture-toolbar" id="topic-desc-toolbar" style="margin-bottom: 0.25rem;">
+                        <button type="button" class="toolbar-btn" data-format="bold" title="Paryškintas (Bold)">
+                            <i data-lucide="bold"></i>
+                        </button>
+                        <button type="button" class="toolbar-btn" data-format="italic" title="Kursyvas (Italic)">
+                            <i data-lucide="italic"></i>
+                        </button>
+                        <div class="toolbar-separator"></div>
+                        <button type="button" class="toolbar-btn" data-format="bullet" title="Sąrašas punktais">
+                            <i data-lucide="list"></i>
+                        </button>
+                        <button type="button" class="toolbar-btn" data-format="number" title="Numeruotas sąrašas">
+                            <i data-lucide="list-ordered"></i>
+                        </button>
+                        <div class="toolbar-separator"></div>
+                        <div class="emoji-picker-wrapper">
+                            <button type="button" class="toolbar-btn" id="topic-desc-emoji-picker-btn" title="Įterpti emoji">
+                                <i data-lucide="smile"></i>
+                            </button>
+                            <div id="topic-desc-emoji-dropdown" class="emoji-dropdown hidden" style="position: absolute; left: 0; z-index: 50 !important;"></div>
+                        </div>
+                        <div class="toolbar-separator"></div>
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="toolbar-btn" id="topic-desc-color-picker-btn" title="Teksto spalva">
+                                <i data-lucide="palette"></i>
+                            </button>
+                            <div class="toolbar-dropdown hidden" id="topic-desc-color-dropdown" style="left: 0; z-index: 50 !important;">
+                                <span class="color-swatch" style="background-color: #ef4444;" data-color="#ef4444" title="Raudona"></span>
+                                <span class="color-swatch" style="background-color: #f97316;" data-color="#f97316" title="Oranžinė"></span>
+                                <span class="color-swatch" style="background-color: #eab308;" data-color="#eab308" title="Geltona"></span>
+                                <span class="color-swatch" style="background-color: #22c55e;" data-color="#22c55e" title="Žalia"></span>
+                                <span class="color-swatch" style="background-color: #06b6d4;" data-color="#06b6d4" title="Žydra"></span>
+                                <span class="color-swatch" style="background-color: #3b82f6;" data-color="#3b82f6" title="Mėlyna"></span>
+                                <span class="color-swatch" style="background-color: #a855f7;" data-color="#a855f7" title="Violetinė"></span>
+                                <span class="color-swatch" style="background-color: #ec4899;" data-color="#ec4899" title="Rožinė"></span>
+                            </div>
+                        </div>
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="toolbar-btn" id="topic-desc-highlight-picker-btn" title="Teksto žymeklis">
+                                <i data-lucide="highlighter"></i>
+                            </button>
+                            <div class="toolbar-dropdown hidden" id="topic-desc-highlight-dropdown" style="left: 0; z-index: 50 !important;">
+                                <span class="highlight-swatch" style="background-color: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444;" data-bg="rgba(239, 68, 68, 0.2)" data-color="#ef4444" title="Raudona"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(249, 115, 22, 0.25); border: 1px solid #f97316;" data-bg="rgba(249, 115, 22, 0.2)" data-color="#f97316" title="Oranžinė"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(234, 179, 8, 0.25); border: 1px solid #eab308;" data-bg="rgba(234, 179, 8, 0.2)" data-color="#eab308" title="Geltona"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(34, 197, 94, 0.25); border: 1px solid #22c55e;" data-bg="rgba(34, 197, 94, 0.2)" data-color="#22c55e" title="Žalia"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(6, 182, 212, 0.25); border: 1px solid #06b6d4;" data-bg="rgba(6, 182, 212, 0.2)" data-color="#06b6d4" title="Žydra"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6;" data-bg="rgba(59, 130, 246, 0.2)" data-color="#3b82f6" title="Mėlyna"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(168, 85, 247, 0.25); border: 1px solid #a855f7;" data-bg="rgba(168, 85, 247, 0.2)" data-color="#a855f7" title="Violetinė"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(236, 72, 153, 0.25); border: 1px solid #ec4899;" data-bg="rgba(236, 72, 153, 0.2)" data-color="#ec4899" title="Rožinė"></span>
+                            </div>
+                        </div>
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="toolbar-btn" id="topic-desc-size-picker-btn" title="Teksto dydis">
+                                <i data-lucide="type"></i>
+                            </button>
+                            <div class="toolbar-dropdown hidden" id="topic-desc-size-dropdown" style="left: 0; z-index: 50 !important;">
+                                <div class="size-option" data-size="0.8rem" style="font-size: 0.85rem;">Mažas</div>
+                                <div class="size-option" data-size="1rem" style="font-size: 1rem;">Normalus</div>
+                                <div class="size-option" data-size="1.25rem" style="font-size: 1.15rem; font-weight: bold;">Didelis</div>
+                                <div class="size-option" data-size="1.5rem" style="font-size: 1.3rem; font-weight: bold;">Labai didelis</div>
+                            </div>
+                        </div>
+                    </div>
+                    <textarea id="topic-desc" placeholder="Šios temos ar paskaitos tikslas, pastabos apie ją..." rows="3"></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary cancel-modal-btn">Atšaukti</button>
+                    <button type="submit" class="btn btn-primary">Išsaugoti</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Note Edit Modal (Simplified editing for existing notes in stream) -->
+    <div id="edit-note-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Redaguoti pastabą</h3>
+                <button class="close-modal-btn"><i data-lucide="x"></i></button>
+            </div>
+            <form id="edit-note-form" class="modal-form">
+                <input type="hidden" id="edit-note-id">
+                <input type="hidden" id="edit-note-type">
+
+                <div class="form-group" style="position: relative;">
+                    <label for="edit-note-title">Antraštė (nebūtina)</label>
+                    <div class="capture-toolbar" id="edit-note-title-toolbar" style="margin-bottom: 0.25rem;">
+                        <button type="button" class="toolbar-btn" data-format="bold" title="Paryškintas (Bold)">
+                            <i data-lucide="bold"></i>
+                        </button>
+                        <button type="button" class="toolbar-btn" data-format="italic" title="Kursyvas (Italic)">
+                            <i data-lucide="italic"></i>
+                        </button>
+                        <div class="toolbar-separator"></div>
+                        <div class="emoji-picker-wrapper">
+                            <button type="button" class="toolbar-btn" id="edit-note-title-emoji-picker-btn" title="Įterpti emoji">
+                                <i data-lucide="smile"></i>
+                            </button>
+                            <div id="edit-note-title-emoji-dropdown" class="emoji-dropdown hidden" style="position: absolute; left: 0; z-index: 50 !important;"></div>
+                        </div>
+                        <div class="toolbar-separator"></div>
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="toolbar-btn" id="edit-note-title-color-picker-btn" title="Teksto spalva">
+                                <i data-lucide="palette"></i>
+                            </button>
+                            <div class="toolbar-dropdown hidden" id="edit-note-title-color-dropdown" style="left: 0; z-index: 50 !important;">
+                                <span class="color-swatch" style="background-color: #ef4444;" data-color="#ef4444" title="Raudona"></span>
+                                <span class="color-swatch" style="background-color: #f97316;" data-color="#f97316" title="Oranžinė"></span>
+                                <span class="color-swatch" style="background-color: #eab308;" data-color="#eab308" title="Geltona"></span>
+                                <span class="color-swatch" style="background-color: #22c55e;" data-color="#22c55e" title="Žalia"></span>
+                                <span class="color-swatch" style="background-color: #06b6d4;" data-color="#06b6d4" title="Žydra"></span>
+                                <span class="color-swatch" style="background-color: #3b82f6;" data-color="#3b82f6" title="Mėlyna"></span>
+                                <span class="color-swatch" style="background-color: #a855f7;" data-color="#a855f7" title="Violetinė"></span>
+                                <span class="color-swatch" style="background-color: #ec4899;" data-color="#ec4899" title="Rožinė"></span>
+                            </div>
+                        </div>
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="toolbar-btn" id="edit-note-title-highlight-picker-btn" title="Teksto žymeklis">
+                                <i data-lucide="highlighter"></i>
+                            </button>
+                            <div class="toolbar-dropdown hidden" id="edit-note-title-highlight-dropdown" style="left: 0; z-index: 50 !important;">
+                                <span class="highlight-swatch" style="background-color: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444;" data-bg="rgba(239, 68, 68, 0.2)" data-color="#ef4444" title="Raudona"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(249, 115, 22, 0.25); border: 1px solid #f97316;" data-bg="rgba(249, 115, 22, 0.2)" data-color="#f97316" title="Oranžinė"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(234, 179, 8, 0.25); border: 1px solid #eab308;" data-bg="rgba(234, 179, 8, 0.2)" data-color="#eab308" title="Geltona"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(34, 197, 94, 0.25); border: 1px solid #22c55e;" data-bg="rgba(34, 197, 94, 0.2)" data-color="#22c55e" title="Žalia"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(6, 182, 212, 0.25); border: 1px solid #06b6d4;" data-bg="rgba(6, 182, 212, 0.2)" data-color="#06b6d4" title="Žydra"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6;" data-bg="rgba(59, 130, 246, 0.2)" data-color="#3b82f6" title="Mėlyna"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(168, 85, 247, 0.25); border: 1px solid #a855f7;" data-bg="rgba(168, 85, 247, 0.2)" data-color="#a855f7" title="Violetinė"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(236, 72, 153, 0.25); border: 1px solid #ec4899;" data-bg="rgba(236, 72, 153, 0.2)" data-color="#ec4899" title="Rožinė"></span>
+                            </div>
+                        </div>
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="toolbar-btn" id="edit-note-title-size-picker-btn" title="Teksto dydis">
+                                <i data-lucide="type"></i>
+                            </button>
+                            <div class="toolbar-dropdown hidden" id="edit-note-title-size-dropdown" style="left: 0; z-index: 50 !important;">
+                                <div class="size-option" data-size="0.8rem" style="font-size: 0.85rem;">Mažas</div>
+                                <div class="size-option" data-size="1rem" style="font-size: 1rem;">Normalus</div>
+                                <div class="size-option" data-size="1.25rem" style="font-size: 1.15rem; font-weight: bold;">Didelis</div>
+                                <div class="size-option" data-size="1.5rem" style="font-size: 1.3rem; font-weight: bold;">Labai didelis</div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="text" id="edit-note-title" placeholder="Pavadinimas">
+                </div>
+
+                <!-- Shared Content/Code Area depending on type -->
+                <div class="form-group" style="position: relative;">
+                    <label for="edit-note-content">Tekstas / Kodas / Nuoroda</label>
+                    <div class="capture-toolbar" id="edit-note-toolbar" style="margin-bottom: 0.25rem;">
+                        <button type="button" class="toolbar-btn" data-format="bold" title="Paryškintas (Bold)">
+                            <i data-lucide="bold"></i>
+                        </button>
+                        <button type="button" class="toolbar-btn" data-format="italic" title="Kursyvas (Italic)">
+                            <i data-lucide="italic"></i>
+                        </button>
+                        <div class="toolbar-separator"></div>
+                        <button type="button" class="toolbar-btn" data-format="bullet" title="Sąrašas punktais">
+                            <i data-lucide="list"></i>
+                        </button>
+                        <button type="button" class="toolbar-btn" data-format="number" title="Numeruotas sąrašas">
+                            <i data-lucide="list-ordered"></i>
+                        </button>
+                        <button type="button" class="toolbar-btn" data-format="code" title="Kodas (Inline/Block)">
+                            <i data-lucide="code"></i>
+                        </button>
+                        <div class="toolbar-separator"></div>
+                        <div class="emoji-picker-wrapper">
+                            <button type="button" class="toolbar-btn" id="edit-note-emoji-picker-btn" title="Įterpti emoji">
+                                <i data-lucide="smile"></i>
+                            </button>
+                            <div id="edit-note-emoji-dropdown" class="emoji-dropdown hidden" style="position: absolute; left: 0; z-index: 50 !important;"></div>
+                        </div>
+                        <div class="toolbar-separator"></div>
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="toolbar-btn" id="edit-note-color-picker-btn" title="Teksto spalva">
+                                <i data-lucide="palette"></i>
+                            </button>
+                            <div class="toolbar-dropdown hidden" id="edit-note-color-dropdown" style="left: 0; z-index: 50 !important;">
+                                <span class="color-swatch" style="background-color: #ef4444;" data-color="#ef4444" title="Raudona"></span>
+                                <span class="color-swatch" style="background-color: #f97316;" data-color="#f97316" title="Oranžinė"></span>
+                                <span class="color-swatch" style="background-color: #eab308;" data-color="#eab308" title="Geltona"></span>
+                                <span class="color-swatch" style="background-color: #22c55e;" data-color="#22c55e" title="Žalia"></span>
+                                <span class="color-swatch" style="background-color: #06b6d4;" data-color="#06b6d4" title="Žydra"></span>
+                                <span class="color-swatch" style="background-color: #3b82f6;" data-color="#3b82f6" title="Mėlyna"></span>
+                                <span class="color-swatch" style="background-color: #a855f7;" data-color="#a855f7" title="Violetinė"></span>
+                                <span class="color-swatch" style="background-color: #ec4899;" data-color="#ec4899" title="Rožinė"></span>
+                            </div>
+                        </div>
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="toolbar-btn" id="edit-note-highlight-picker-btn" title="Teksto žymeklis">
+                                <i data-lucide="highlighter"></i>
+                            </button>
+                            <div class="toolbar-dropdown hidden" id="edit-note-highlight-dropdown" style="left: 0; z-index: 50 !important;">
+                                <span class="highlight-swatch" style="background-color: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444;" data-bg="rgba(239, 68, 68, 0.2)" data-color="#ef4444" title="Raudona"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(249, 115, 22, 0.25); border: 1px solid #f97316;" data-bg="rgba(249, 115, 22, 0.2)" data-color="#f97316" title="Oranžinė"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(234, 179, 8, 0.25); border: 1px solid #eab308;" data-bg="rgba(234, 179, 8, 0.2)" data-color="#eab308" title="Geltona"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(34, 197, 94, 0.25); border: 1px solid #22c55e;" data-bg="rgba(34, 197, 94, 0.2)" data-color="#22c55e" title="Žalia"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(6, 182, 212, 0.25); border: 1px solid #06b6d4;" data-bg="rgba(6, 182, 212, 0.2)" data-color="#06b6d4" title="Žydra"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6;" data-bg="rgba(59, 130, 246, 0.2)" data-color="#3b82f6" title="Mėlyna"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(168, 85, 247, 0.25); border: 1px solid #a855f7;" data-bg="rgba(168, 85, 247, 0.2)" data-color="#a855f7" title="Violetinė"></span>
+                                <span class="highlight-swatch" style="background-color: rgba(236, 72, 153, 0.25); border: 1px solid #ec4899;" data-bg="rgba(236, 72, 153, 0.2)" data-color="#ec4899" title="Rožinė"></span>
+                            </div>
+                        </div>
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" class="toolbar-btn" id="edit-note-size-picker-btn" title="Teksto dydis">
+                                <i data-lucide="type"></i>
+                            </button>
+                            <div class="toolbar-dropdown hidden" id="edit-note-size-dropdown" style="left: 0; z-index: 50 !important;">
+                                <div class="size-option" data-size="0.8rem" style="font-size: 0.85rem;">Mažas</div>
+                                <div class="size-option" data-size="1rem" style="font-size: 1rem;">Normalus</div>
+                                <div class="size-option" data-size="1.25rem" style="font-size: 1.15rem; font-weight: bold;">Didelis</div>
+                                <div class="size-option" data-size="1.5rem" style="font-size: 1.3rem; font-weight: bold;">Labai didelis</div>
+                            </div>
+                        </div>
+                    </div>
+                    <textarea id="edit-note-content" rows="8" placeholder="Turinys..."></textarea>
+                </div>
+
+                <!-- Image preview (shown only for image types) -->
+                <div class="form-group hidden" id="edit-note-image-group">
+                    <label>Ekrano nuotrauka</label>
+                    <div class="edit-img-preview-container">
+                        <img id="edit-note-image-preview" src="" alt="Nuotrauka">
+                    </div>
+                </div>
+
+                <!-- Attachments list (shown when item has saved attachments) -->
+                <div class="form-group hidden" id="edit-note-attachments-group">
+                    <label>Priedai</label>
+                    <div id="edit-note-attachments-list" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-note-tags">Žymos (atskirti kableliais)</label>
+                    <input type="text" id="edit-note-tags" placeholder="pvz., prompts, screenshot">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary cancel-modal-btn">Atšaukti</button>
+                    <button type="submit" class="btn btn-primary">Išsaugoti</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Image Detail Preview Modal -->
+    <div id="image-viewer-modal" class="modal image-viewer-modal">
+        <span class="close-viewer-btn">&times;</span>
+        <img class="viewer-content" id="viewer-img" alt="Padidinta nuotrauka">
+        <div id="viewer-caption"></div>
+    </div>
+
+    <!-- JavaScript Execution -->
+    <script src="app.js"></script>
+</body>
+</html>
