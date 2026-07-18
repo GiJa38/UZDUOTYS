@@ -1945,6 +1945,21 @@ function closeModal(modal) {
 }
 
 function registerEventListeners() {
+    // Mobile Sidebar Toggles
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    document.addEventListener('click', (e) => {
+        const toggleBtn = e.target.closest('.toggle-sidebar-btn');
+        if (toggleBtn) {
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        } else if (e.target === overlay || e.target.closest('.sidebar-footer button, #topics-list li')) {
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+        }
+    });
+
     // Initialize toolbar and emoji pickers - Quick Capture
     initGenericEmojiPicker('emoji-picker-btn', 'emoji-dropdown', 'capture-input');
     initGenericFormattingToolbar('capture-toolbar', 'capture-input');

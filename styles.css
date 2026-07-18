@@ -1465,8 +1465,50 @@ body {
         grid-template-columns: 1fr;
     }
     
+    /* Off-canvas mobile sidebar sliding menu */
     .sidebar {
-        display: none; /* Mobile support in future */
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 270px;
+        z-index: 999999;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        box-shadow: 5px 0 25px rgba(0, 0, 0, 0.6);
+        background: #0f172a;
+    }
+    
+    .sidebar.mobile-open {
+        transform: translateX(0);
+        display: flex !important;
+    }
+    
+    /* Toggle buttons on mobile */
+    .toggle-sidebar-btn.mobile-menu-btn,
+    .welcome-container .mobile-top-bar {
+        display: flex !important;
+    }
+    
+    .welcome-container {
+        padding-top: 5rem !important;
+    }
+    
+    /* Backdrop behind mobile sidebar */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(4px);
+        z-index: 999998;
+        display: none;
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
     }
 }
 
