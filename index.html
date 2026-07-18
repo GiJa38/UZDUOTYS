@@ -68,6 +68,18 @@
 
         <!-- Main Content Area -->
         <main class="main-content" id="main-content">
+            <!-- Installation Banner for PWA -->
+            <div id="pwa-install-banner" class="hidden" style="background:var(--primary); padding:0.75rem 1rem; display:flex; align-items:center; justify-content:between; gap:1rem; border-bottom:1px solid rgba(255,255,255,0.1);">
+                <div style="display:flex; align-items:center; gap:0.5rem; color:#fff; font-size:0.85rem; font-weight:600;">
+                    <i data-lucide="smartphone"></i>
+                    <span>Įsidiekite programėlę į telefono ekraną!</span>
+                </div>
+                <div style="display:flex; gap:0.5rem; margin-left:auto;">
+                    <button id="pwa-install-btn" class="btn btn-sm" style="background:#fff; color:var(--bg-dark); font-weight:700; font-size:0.75rem; padding:0.35rem 0.75rem;">Įdiegti</button>
+                    <button id="pwa-close-banner-btn" class="btn btn-secondary btn-sm" style="padding:0.35rem; display:flex; align-items:center; justify-content:center;"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+                </div>
+            </div>
+
             <!-- Default screen when no topic is selected -->
             <div id="welcome-view" class="welcome-container">
                 <div class="welcome-card">
@@ -601,6 +613,40 @@
     <!-- JavaScript Execution -->
     <script src="app.js"></script>
     <script>
+        let deferredPrompt;
+        const installBanner = document.getElementById('pwa-install-banner');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const closeBannerBtn = document.getElementById('pwa-close-banner-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            deferredPrompt = e;
+            // Update UI to show the install banner
+            installBanner.classList.remove('hidden');
+        });
+
+        installBtn.addEventListener('click', (e) => {
+            // Hide the app provided install promotion
+            installBanner.classList.add('hidden');
+            // Show the install prompt
+            deferredPrompt.prompt();
+            // Wait for the user to respond to the prompt
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                } else {
+                    console.log('User dismissed the install prompt');
+                }
+                deferredPrompt = null;
+            });
+        });
+
+        closeBannerBtn.addEventListener('click', () => {
+            installBanner.classList.add('hidden');
+        });
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
