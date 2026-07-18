@@ -1511,56 +1511,104 @@ body {
         display: block;
     }
 
-    /* Refined Mobile Header layout */
+    /* Refined Mobile Header layout to prevent overlap */
     .topic-header {
-        padding-bottom: 0.85rem;
-        margin-bottom: 1rem;
+        padding: 0.5rem 0.25rem 0.85rem 0.25rem;
+        margin-bottom: 0.75rem;
     }
 
     .topic-header-main {
+        display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
-        gap: 0.75rem;
+        gap: 0.5rem;
         width: 100%;
+        overflow: hidden;
     }
 
     .topic-title-wrapper {
+        display: flex;
+        align-items: center;
         flex: 1;
-        min-width: 0; /* Ensures truncation/flex wrapping works */
-        gap: 0.5rem;
+        min-width: 0; /* allows text truncation inside flex child */
+        gap: 0.4rem;
+        overflow: hidden;
     }
 
     .topic-emoji {
-        font-size: 1.8rem;
-        padding: 0.3rem;
+        font-size: 1.6rem;
+        padding: 0.25rem;
         flex-shrink: 0;
     }
 
     .topic-title-wrapper h1 {
-        font-size: 1.25rem;
+        font-size: 1.15rem;
         line-height: 1.2;
+        font-weight: 700;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        max-width: 130px; /* Restrict width strictly so it never overlaps buttons */
     }
 
     .topic-description {
-        display: none; /* Hide description on mobile to save screen height */
+        display: none !important;
     }
 
     .topic-actions {
+        display: flex;
         flex-shrink: 0;
-        gap: 0.35rem;
+        gap: 0.3rem;
     }
 
     .topic-actions .btn-icon {
-        width: 34px;
-        height: 34px;
+        width: 32px;
+        height: 32px;
         padding: 0;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
+    }
+
+    /* Fix capture box and stream wrapping on mobile screens */
+    .main-content {
+        padding: 0.75rem 0.5rem !important;
+        overflow-x: hidden;
+    }
+
+    .quick-capture-section {
+        margin-bottom: 1rem;
+        padding: 0 !important;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .quick-capture-box {
+        padding: 0.75rem !important;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .capture-toolbar {
+        flex-wrap: wrap; /* Toolbar wraps on tiny screens */
+        gap: 0.2rem;
+    }
+
+    .capture-meta-inputs {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+
+    .capture-meta-inputs input {
+        width: 100% !important;
+    }
+
+    .stream-flow-container {
+        padding: 0.25rem 0 !important;
+        width: 100%;
+        box-sizing: border-box;
     }
 }
 
