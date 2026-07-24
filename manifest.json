@@ -1,6 +1,6 @@
 {
-  "name": "AI Studiju Srautas",
-  "short_name": "AI Srautas",
+  "name": "Užrašai",
+  "short_name": "Užrašai",
   "description": "Greitas konspektavimo srautas mokymuisi",
   "start_url": "./index.html",
   "display": "standalone",
