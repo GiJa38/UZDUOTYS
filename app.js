@@ -339,7 +339,6 @@ const dom = {
     welcomeView: document.getElementById('welcome-view'),
     topicView: document.getElementById('topic-view'),
     welcomeNewTopicBtn: document.getElementById('welcome-new-topic-btn'),
-    quickDemoBtn: document.getElementById('quick-demo-btn'),
 
     // Active Topic Info
     topicIconDisplay: document.getElementById('topic-icon-display'),
@@ -1580,19 +1579,7 @@ dom.importFileInput.addEventListener('change', (e) => {
     dom.importFileInput.value = ''; // Reset input
 });
 
-// Load Demo Template
-dom.quickDemoBtn.addEventListener('click', async () => {
-    if (confirm('Užkraunant pavyzdinį kursą bus sukurta demonstracinių duomenų jūsų sraute. Ar tęsti?')) {
-        try {
-            await dbManager.importAllData(demoData);
-            state.activeTopicId = 'demo-lecture-1';
-            await loadAppState();
-        } catch (e) {
-            console.error('Nepavyko užkrauti demo pavyzdžių:', e);
-            alert('Klaida užkraunant demonstracinius duomenis.');
-        }
-    }
-});
+
 
 // ==========================================================================
 // SEARCH & FILTER LOGIC
