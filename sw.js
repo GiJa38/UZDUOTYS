@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ai-study-stream-v1';
+const CACHE_NAME = 'ai-study-stream-v2';
 const ASSETS = [
   './',
   './index.html',
